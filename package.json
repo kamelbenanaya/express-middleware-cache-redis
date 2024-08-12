@@ -1,0 +1,33 @@
+{
+  "name": "express-middleware-cache-redis",
+  "version": "1.0.0",
+  "description": "Express middleware for caching requests using Redis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "redis",
+    "cache",
+    "middleware"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/kamelbenanaya/express-middleware-cache-redis.git"
+  },
+  "author": "kamelbenanaya",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kamelbenanaya/express-middleware-cache-redis/issues"
+  },
+  "homepage": "https://github.com/kamelbenanaya/express-middleware-cache-redis#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ioredis": "^5.4.1"
+  },
+  "peerDependencies": {
+    "express": "^4.x",
+    "ioredis": "^5.x"
+  }
+}
