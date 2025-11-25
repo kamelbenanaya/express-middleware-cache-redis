@@ -1,17 +1,31 @@
 const Redis = require("ioredis");
+const debug = require("debug")("express-middleware-cache-redis:client");
 
-function createRedisClient(redisUrl) {
-  const redis = new Redis(redisUrl, {
-    connectTimeout: 20000,
-  });
+function createRedisClient(clientOrUrl) {
+  let redis;
 
-  redis.on("connect", () => {
-    console.log("Connected to Redis");
-  });
+  if (typeof clientOrUrl === "string") {
+    redis = new Redis(clientOrUrl, {
+      connectTimeout: 20000,
+    });
 
-  redis.on("error", (err) => {
-    console.error("Redis error:", err);
-  });
+    redis.on("connect", () => {
+      debug("Connected to Redis");
+    });
+
+    redis.on("error", (err) => {
+      console.error("Redis error:", err);
+    });
+  } else if (
+    typeof clientOrUrl === "object" &&
+    typeof clientOrUrl.get === "function"
+  ) {
+    redis = clientOrUrl;
+  } else {
+    throw new Error(
+      "Invalid argument: Expected a Redis URL string or a Redis client instance."
+    );
+  }
 
   return redis;
 }

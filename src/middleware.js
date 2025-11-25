@@ -1,14 +1,16 @@
+const debug = require("debug")("express-middleware-cache-redis:middleware");
+
 function createMiddleware(redis) {
   const checkCacheMiddleware = async function (req, res, next) {
     try {
       const cacheKey = `${req.method}-${req.originalUrl}`;
-      console.log("call cacheMiddleware with key:", cacheKey);
+      debug("call cacheMiddleware with key: %s", cacheKey);
 
       const cacheEnabled = await redis.get(`${cacheKey}-enabled`);
       if (cacheEnabled === "true") {
         const cachedData = await redis.get(`${cacheKey}-data`);
         if (cachedData) {
-          console.log("Returning cached data");
+          debug("Returning cached data");
           return res.status(200).json(JSON.parse(cachedData));
         }
       }
@@ -19,18 +21,18 @@ function createMiddleware(redis) {
           try {
             await redis.set(`${cacheKey}-data`, JSON.stringify(body));
             await redis.set(`${cacheKey}-enabled`, "true");
-            console.log("Cache updated with response data");
+            debug("Cache updated with response data");
           } catch (error) {
-            console.error(`Error updating cache for ${cacheKey}:`, error);
+            debug(`Error updating cache for ${cacheKey}: %o`, error);
           }
         }
-        console.log("Returning real data");
+        debug("Returning real data");
         return originalJson.call(res, body);
       };
 
       next();
     } catch (error) {
-      console.error("Error in cache middleware:", error);
+      debug("Error in cache middleware: %o", error);
       next(error);
     }
   };
@@ -38,7 +40,8 @@ function createMiddleware(redis) {
   const clearCacheMiddleware = function (prefix) {
     return async (req, res, next) => {
       try {
-        const pattern = `${prefix}*`;
+        // Allow matching any method if just path is provided
+        const pattern = `*${prefix}*`;
         const stream = redis.scanStream({
           match: pattern,
           count: 100,
@@ -49,24 +52,21 @@ function createMiddleware(redis) {
             const pipeline = redis.pipeline();
             keys.forEach((key) => pipeline.del(key));
             await pipeline.exec();
-            console.log(`Deleted keys: ${keys.join(", ")}`);
+            debug(`Deleted keys: ${keys.join(", ")}`);
           }
         });
 
         stream.on("end", () => {
-          console.log(`Cache clearing completed for prefix: ${prefix}`);
+          debug(`Cache clearing completed for prefix: ${prefix}`);
           next();
         });
 
         stream.on("error", (error) => {
-          console.error(
-            `Error during cache clearing for prefix ${prefix}:`,
-            error
-          );
+          debug(`Error during cache clearing for prefix ${prefix}: %o`, error);
           next(error);
         });
       } catch (error) {
-        console.error(`Error in clearCacheMiddleware:`, error);
+        debug(`Error in clearCacheMiddleware: %o`, error);
         next(error);
       }
     };
